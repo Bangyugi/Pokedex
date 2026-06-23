@@ -9,6 +9,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -19,11 +20,22 @@ class HomeViewModel @Inject constructor(
     private val repository: PokemonRepository
 ) : ViewModel() {
 
-    val pokemonNames: StateFlow<List<String>> = repository.pokemons
-        .map { entities -> entities.map { it.name } }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = emptyList()
-        )
+    private val _searchQuery = MutableStateFlow("")
+    val searchQuery : StateFlow<String> = _searchQuery
+
+     val pokemonNames: StateFlow<List<String>> = repository.pokemons
+         .combine(_searchQuery){
+             entities,query ->
+             entities.map{
+                 it.name
+             }.filter { it.contains(query, ignoreCase = true) }
+         }
+         .stateIn(scope = viewModelScope,
+             started = SharingStarted.WhileSubscribed(5000),
+             initialValue = emptyList())
+
+    fun onSearchQueryChange(newQuery: String) {
+        _searchQuery.value = newQuery
+    }
+
 }

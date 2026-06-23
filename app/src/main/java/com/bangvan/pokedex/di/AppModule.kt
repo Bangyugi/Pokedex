@@ -1,10 +1,9 @@
 package com.bangvan.pokedex.di
 
-import android.app.Application
 import android.content.Context
 import androidx.room.Room
-import com.bangvan.pokedex.data.local.PokemonDao
-import com.bangvan.pokedex.data.local.PokemonDatabase
+import com.bangvan.pokedex.data.local.dao.PokemonDao
+import com.bangvan.pokedex.data.local.database.PokemonDatabase
 import com.bangvan.pokedex.data.remote.PokemonApi
 import dagger.Module
 import dagger.Provides
@@ -13,7 +12,6 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
-import retrofit2.create
 import javax.inject.Singleton
 
 @Module
@@ -48,7 +46,9 @@ object AppModule {
             context,
             PokemonDatabase::class.java,
             "pokemon_database"
-        ).build()
+        )
+        .fallbackToDestructiveMigration()
+        .build()
     }
 
     @Provides

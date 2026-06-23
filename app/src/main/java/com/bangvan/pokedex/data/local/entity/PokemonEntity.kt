@@ -1,4 +1,4 @@
-package com.bangvan.pokedex.data.local
+package com.bangvan.pokedex.data.local.entity
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey

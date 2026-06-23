@@ -7,7 +7,7 @@ data class PokemonDetailDto(
     val height: Int,
     val weight: Int,
     val types: List<TypeSlot>,
-    val sprites: Sprites
+    val sprites: Sprites,
 ) {
     data class TypeSlot(val type: TypeInfo)
     data class TypeInfo(val name: String)

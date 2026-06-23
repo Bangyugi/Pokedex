@@ -54,16 +54,7 @@ fun HomeScreen (viewModel: HomeViewModel,
                 singleLine = true
             )
 
-            IconButton(
-                onClick = {},
-                modifier = Modifier.padding(start = 8.dp).size(50.dp)
-            )
-            {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.List,
-                    contentDescription = "Filter icon"
-                )
-            }
+
         }
 
         Spacer(modifier = Modifier.height(16.dp))

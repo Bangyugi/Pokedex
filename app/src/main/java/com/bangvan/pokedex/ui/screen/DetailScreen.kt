@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -23,57 +24,78 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import com.bangvan.pokedex.ui.viewmodel.DetailUiState
 import com.bangvan.pokedex.ui.viewmodel.DetailViewModel
 
 
 @Composable
 fun DetailScreen(
     viewModel: DetailViewModel,
-    onNavigateBack:() -> Unit
-){
+    onNavigateBack: () -> Unit
+) {
+    val uiState by viewModel.uiState.collectAsState()
 
-    val detail by viewModel.pokemonDetail.collectAsState()
-
-    if (detail == null){
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            CircularProgressIndicator()
+    when (val state = uiState) {
+        is DetailUiState.Loading -> {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
+            }
         }
-    }
-    else{
-        Column(
-            modifier = Modifier.fillMaxSize().padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
+        is DetailUiState.Error -> {
+            Box(
+                modifier = Modifier.fillMaxSize().padding(16.dp),
+                contentAlignment = Alignment.Center
             ) {
-                IconButton(onClick = onNavigateBack) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Quay lại"
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        text = state.message,
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier.padding(bottom = 16.dp)
                     )
+                    Button(onClick = { viewModel.loadAndSync() }) {
+                        Text("Thử lại")
+                    }
                 }
             }
+        }
+        is DetailUiState.Success -> {
+            val pokemon = state.pokemon
+            Column(
+                modifier = Modifier.fillMaxSize().padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(onClick = onNavigateBack) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Quay lại"
+                        )
+                    }
+                }
 
-            AsyncImage(
-                model = detail!!.imageUrl,
-                contentDescription = detail!!.name,
-                modifier = Modifier.size(200.dp)
-            )
-            Text(
-                text = detail!!.name.replaceFirstChar { it.uppercase() },
-                style = MaterialTheme.typography.headlineLarge
-            )
+                AsyncImage(
+                    model = pokemon.imageUrl,
+                    contentDescription = pokemon.name,
+                    modifier = Modifier.size(200.dp)
+                )
+                Text(
+                    text = pokemon.name.replaceFirstChar { it.uppercase() },
+                    style = MaterialTheme.typography.headlineLarge
+                )
 
-            Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
-            Text("Chiều cao: ${detail!!.height / 10f} m")
-            Text("Cân nặng: ${detail!!.weight / 10f} kg")
+                Text("Chiều cao: ${pokemon.height / 10f} m")
+                Text("Cân nặng: ${pokemon.weight / 10f} kg")
 
-            Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
-            Text("Hệ: ${detail!!.types.joinToString(", ")}")
+                Text("Hệ: ${pokemon.types.joinToString(", ")}")
+            }
         }
     }
 }

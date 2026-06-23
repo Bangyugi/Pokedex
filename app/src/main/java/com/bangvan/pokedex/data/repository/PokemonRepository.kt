@@ -5,8 +5,10 @@ import com.bangvan.pokedex.data.local.dao.PokemonDao
 import com.bangvan.pokedex.data.local.entity.PokemonDetailEntity
 import com.bangvan.pokedex.data.local.entity.PokemonEntity
 import com.bangvan.pokedex.data.remote.PokemonApi
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
 import javax.inject.Inject
 
 class PokemonRepository @Inject constructor(
@@ -28,20 +30,13 @@ class PokemonRepository @Inject constructor(
         }
     }
 
-    fun getPokemonDetail (name:String): Flow<PokemonDetailEntity> = flow {
-        val localData = dao.getPokemonDetail(name)
-        if(localData != null){
-            emit(localData)
-        }
-        else{
-            try {
-                val remoteData = api.getPokemonDetail(name)
-                val entity = remoteData.toEntity()
-                dao.insertPokemonDetail(entity)
-                emit(entity)
-            }catch (e: Exception){
-                e.printStackTrace()
-            }
-        }
+    fun getPokemonDetailFlow(name: String): Flow<PokemonDetailEntity?> {
+        return dao.getPokemonDetailFlow(name).flowOn(Dispatchers.IO)
+    }
+
+    suspend fun syncPokemonDetail(name: String) {
+        val remoteData = api.getPokemonDetail(name)
+        val entity = remoteData.toEntity()
+        dao.insertPokemonDetail(entity)
     }
 }

@@ -12,6 +12,12 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 
+sealed interface DetailUiState {
+    object Loading : DetailUiState
+    data class Success(val pokemon: PokemonDetailEntity) : DetailUiState
+    data class Error(val message: String) : DetailUiState
+}
+
 @HiltViewModel
 class DetailViewModel @Inject constructor(
     private val repository: PokemonRepository,
@@ -20,16 +26,40 @@ class DetailViewModel @Inject constructor(
 
     private val pokemonName: String = savedStateHandle.get<String>("pokemonName") ?: ""
 
-    private val _pokemonDetail = MutableStateFlow<PokemonDetailEntity?>(null)
-    val pokemonDetail: StateFlow<PokemonDetailEntity?> = _pokemonDetail
+    private val _uiState = MutableStateFlow<DetailUiState>(DetailUiState.Loading)
+    val uiState: StateFlow<DetailUiState> = _uiState
 
     init {
-        fetchDetail()
+        loadAndSync()
     }
 
-    private fun fetchDetail(){
-        viewModelScope.launch { repository.getPokemonDetail(pokemonName).collect { detail ->
-            _pokemonDetail.value = detail
-        } }
+    fun loadAndSync() {
+        _uiState.value = DetailUiState.Loading
+        
+        // 1. Lắng nghe thay đổi dữ liệu từ Local DB
+        viewModelScope.launch {
+            repository.getPokemonDetailFlow(pokemonName).collect { localData ->
+                if (localData != null) {
+                    _uiState.value = DetailUiState.Success(localData)
+                } else {
+                    if (_uiState.value !is DetailUiState.Error) {
+                        _uiState.value = DetailUiState.Loading
+                    }
+                }
+            }
+        }
+
+        // 2. Đồng bộ dữ liệu từ API về Local DB
+        viewModelScope.launch {
+            try {
+                repository.syncPokemonDetail(pokemonName)
+            } catch (e: Exception) {
+                if (_uiState.value !is DetailUiState.Success) {
+                    _uiState.value = DetailUiState.Error(
+                        e.localizedMessage ?: "Lỗi kết nối mạng và không có dữ liệu ngoại tuyến."
+                    )
+                }
+            }
+        }
     }
 }
